@@ -25,7 +25,9 @@
                 <!-- 文章 -->
                 <VueEditor :config="config" v-if="postList.type===1" ref="content"/>
                 <!-- 视频 -->
-                <el-upload class="upload-demo"  action v-if="postList.type===2">
+                <el-upload class="upload-demo" v-if="postList.type===2"
+                :headers='getToken()' action='http://localhost:3000/upload' :on-success="handlevideo"
+                >
                   <el-button size="small" type="primary">点击上传</el-button>
                   <div slot="tip" class="el-upload__tip">只能上传视频</div>
                 </el-upload>
@@ -37,6 +39,13 @@
                 <el-checkbox-group v-model="postList.categories" @change="handleCheckedCitiesChange">
                     <el-checkbox v-for="cate in cateList" :label="cate.id" :key="cate.id">{{cate.name}}</el-checkbox>
                 </el-checkbox-group>
+            </el-form-item>
+            <!-- 封面 -->
+            <el-form-item label="栏目:">
+                <el-upload action='http://localhost:3000/upload' list-type="picture-card"
+                :headers="getToken()" :on-success="handlecover" :on-remove="removecover">
+                  <i class="el-icon-plus"></i>
+                </el-upload>
             </el-form-item>
             <!-- 按钮 -->
             <el-button @click="publish" type="primary">发布</el-button>
@@ -96,25 +105,66 @@ export default {
       let token = localStorage.getItem('admin_token')
       return { Authorization: token }
     },
+    // 点击全选按钮时触发
     handleCheckAllChange (val) {
-      // this.isIndeterminate = false
+      // 当全选按钮被选择时val为true,没被选择时为false
+      // console.log(val)
+      if (val) {
+        this.postList.categories = this.cateList.map((value) => {
+          return value.id
+        })
+      } else {
+        this.postList.categories = []
+      }
+      this.isIndeterminate = false
     },
+    // 点击下面的子选项时触发
     handleCheckedCitiesChange (value) {
-      // let checkedCount = value.length
-      // this.checkAll = checkedCount === this.cateList.length
-      // this.isIndeterminate = checkedCount > 0 && checkedCount < this.cateList.length
+      console.log(value)
+      let checkedCount = value.length
+      if (checkedCount === this.cateList.length) {
+        this.checkAll = true
+      }
+      this.isIndeterminate = checkedCount > 0 && checkedCount < this.cateList.length
     },
     // 点击发布
     publish () {
       // console.log(this.postList)
-      this.postList.content = this.$refs.content.editor.root.innerHTML
+      if (this.postList.type === 1) {
+        this.postList.content = this.$refs.content.editor.root.innerHTML
+      }
       console.log(this.postList)
+    },
+    // 上传视频类文章中上传视频时,on-success上传成功时的钩子
+    handlevideo (response, file, fileList) {
+      // console.log(response)
+      if (response.message === '文件上传成功') {
+        this.postList.content = 'http://127.0.0.1:3000' + response.data.url
+      }
+    },
+    // 上传封面
+    handlecover (response) {
+      console.log(response)
+      if (response.message === '文件上传成功') {
+        this.postList.cover.push({ id: response.data.id })
+      }
+    },
+    // 上传封面时删除图片
+    removecover (file, fileList) {
+      console.log(file)
+      let id = file.response.data.id
+      for (var i = 0; i < this.postList.cover.length; i++) {
+        if (this.postList.cover[i].id === id) {
+          this.postList.cover.splice(i, 1)
+          break
+        }
+      }
     }
   },
   async mounted () {
     let res = await getCateList()
-    console.log(res)
-    this.cateList = res.data.data.splice(1)
+    // console.log(res)
+    this.cateList = res.data.data.splice(2)
     console.log(this.cateList)
   }
 }
