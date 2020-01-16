@@ -43,7 +43,7 @@
             <!-- 封面 -->
             <el-form-item label="栏目:">
                 <el-upload action='http://localhost:3000/upload' list-type="picture-card"
-                :headers="getToken()" :on-success="handlecover" :on-remove="removecover">
+                :headers="getToken()" :on-success="handlecover" :on-remove="removecover" :file-list="fileList">
                   <i class="el-icon-plus"></i>
                 </el-upload>
             </el-form-item>
@@ -57,7 +57,7 @@
 <script>
 import VueEditor from 'vue-word-editor'
 import 'quill/dist/quill.snow.css'
-import { getCateList } from '@/apis/article.js'
+import { getCateList, getArticleById } from '@/apis/article.js'
 export default {
   data () {
     return {
@@ -68,6 +68,7 @@ export default {
         content: '',
         cover: []
       },
+      fileList: [],
       isIndeterminate: false,
       checkAll: false,
       cateList: [],
@@ -165,7 +166,19 @@ export default {
     let res = await getCateList()
     // console.log(res)
     this.cateList = res.data.data.splice(2)
-    console.log(this.cateList)
+    // console.log(this.cateList)
+    // 当url中传有id时为编辑文章
+    let id = this.$route.params.id
+    if (id) {
+      let articledetail = await getArticleById(id)
+      console.log(articledetail)
+      this.postList = articledetail.data.data
+      this.$refs.content.editor.clipboard.dangerouslyPasteHTML(0, this.postList.content)
+      this.postList.categories = this.postList.categories.map((value) => {
+        return value.id
+      })
+      this.fileList = this.postList.cover
+    }
   }
 }
 </script>

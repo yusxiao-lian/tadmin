@@ -14,3 +14,10 @@ export const getCateList = () => {
     url: '/category'
   })
 }
+
+// 根据id获取文章详情
+export const getArticleById = (id) => {
+  return axios({
+    url: `/post/${id}`
+  })
+}
